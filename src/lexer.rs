@@ -1,3 +1,5 @@
+use std::fs::{self, File};
+
 static KEYWORDS: [&str; 34] = [
    "auto", "break", "case", "char", "const", "continue",
    "default", "do", "double",  "else", "enum", "extern",
@@ -94,13 +96,13 @@ impl Lexer {
             input,
             position: 0,
             read_position: 0,
-            ch: '$'
+            ch: '0'
         }
     }
 
     pub fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
-            self.ch = '$';
+            self.ch = '0';
         } else {
             self.ch = self.input[self.read_position];
         }
@@ -151,7 +153,7 @@ impl Lexer {
         let token: TokType;
         self.skip_whitespace();
         match self.ch {
-            '$' => token = TokType::EOF,
+            '0' => token = TokType::EOF,
             '(' => token = TokType::LPAREN(self.ch),
             ')' => token = TokType::RPAREN(self.ch),
             '{' => token = TokType::LBRACE(self.ch),
@@ -201,5 +203,19 @@ impl Lexer {
         }
         self.read_char();
         token
+    }
+}
+
+pub fn parse_file(file_path: String) {
+    let contents = fs::read_to_string(file_path).expect("Should have been able to open the file");
+    let mut lexer = Lexer::new(contents.chars().collect());
+    lexer.read_char();
+    loop {
+        let token = lexer.next_token();
+        if token == TokType::EOF {
+            break;
+        } else {
+            println!("{:?}", token);
+        }
     }
 }
