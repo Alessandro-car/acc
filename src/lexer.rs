@@ -15,7 +15,7 @@ static OPERATORS: [&str; 37] = [
     "&&", "||", "!", //Logical operators
     "&", "|", "^", "~", "<<", ">>", //Bitwise operators
     "=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", //Assignment operators
-    "?:", ".", "->", "&" //Other operators
+    "?:", ".", "->", "&"  //Other operators
 ];
 
 static PREPROCESSOR_DIR: [&str; 11] = [
@@ -144,7 +144,7 @@ impl Lexer {
 
         let read_operator = |l: &mut Lexer| -> Vec<char> {
             let position = l.position;
-            while l.position < l.input.len() && !is_letter(l.ch) && !is_digit(l.ch) && l.ch != '#' && l.ch != ' '{
+            while l.position < l.input.len() && !is_letter(l.ch) && !is_digit(l.ch) && l.ch != '#' && l.ch != ' ' {
                 l.read_char();
             }
             l.input[position..l.position].to_vec()
