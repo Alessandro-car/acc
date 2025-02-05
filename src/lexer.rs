@@ -18,11 +18,6 @@ static OPERATORS: [&str; 37] = [
     "?:", ".", "->", "&"  //Other operators
 ];
 
-static PREPROCESSOR_DIR: [&str; 11] = [
-    "#include", "#define", "#undef", "#ifdef", "#ifndef",
-    "#if", "#else", "#elif", "#endif", "#error", "#pragma"
-];
-
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum TokType {
@@ -41,7 +36,6 @@ pub enum TokType {
     COMMA(char),
     KEYWORD(String),
     COMMENT(String),
-    PREPROCESSOR(String),
 }
 
 fn get_keyword_token(ident: &Vec<char>) -> Result<TokType, String> {
@@ -53,16 +47,6 @@ fn get_keyword_token(ident: &Vec<char>) -> Result<TokType, String> {
     }
 
     Err(String::from("Not a keyword"))
-}
-
-fn get_preprocessor_dir(ident: &Vec<char>) -> Result<TokType, String> {
-    let identifier: String = ident.into_iter().collect();
-    for preprocessor_dir in PREPROCESSOR_DIR.iter() {
-        if identifier == preprocessor_dir.to_string() {
-            return Ok(TokType::PREPROCESSOR(identifier))
-        }
-    }
-    Err(String::from("Not a preprocessor dir"))
 }
 
 fn get_operator_token(ident: &Vec<char>) -> Result<TokType, String> {
@@ -83,7 +67,11 @@ fn is_digit(ch: char) -> bool {
     '0' <= ch && ch <= '9'
 }
 
-pub struct Lexer {
+fn is_whitespace(ch: char) -> bool {
+    ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
+}
+
+struct Lexer {
     input: Vec<char>,
     pub position: usize,
     pub read_position: usize,
@@ -91,7 +79,7 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(input: Vec<char>) -> Self {
+    fn new(input: Vec<char>) -> Self {
         Self {
             input,
             position: 0,
@@ -100,7 +88,7 @@ impl Lexer {
         }
     }
 
-    pub fn read_char(&mut self) {
+    fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
             self.ch = '0';
         } else {
@@ -110,14 +98,28 @@ impl Lexer {
         self.read_position = self.read_position + 1;
     }
 
-    pub fn skip_whitespace(&mut self) {
+    fn skip_whitespace(&mut self) {
         let ch = self.ch;
-        if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
+        if is_whitespace(ch) {
             self.read_char();
         }
     }
 
-    pub fn next_token(&mut self) -> TokType {
+    fn handle_comments(&mut self, type_comment: &str) -> Result<TokType, String>{
+        match type_comment {
+            "//" => {
+                self.ch = '0';
+                return Ok(TokType::EOF);
+            },
+            "/*" => {
+                todo!("Handle multiline comments");
+            },
+            _ => {},
+        }
+        return Ok(TokType::EOF);
+    }
+
+    fn next_token(&mut self) -> TokType {
         let read_identifier = |l: &mut Lexer| -> Vec<char> {
             let position = l.position;
             while l.position < l.input.len() && is_letter(l.ch) {
@@ -134,17 +136,9 @@ impl Lexer {
             l.input[position..l.position].to_vec()
         };
 
-        let read_preprocessor_dir = |l: &mut Lexer| -> Vec<char> {
+       let read_operator = |l: &mut Lexer| -> Vec<char> {
             let position = l.position;
-            while l.position < l.input.len() && is_letter(l.ch) || l.ch == '#' {
-                l.read_char();
-            }
-            l.input[position..l.position].to_vec()
-        };
-
-        let read_operator = |l: &mut Lexer| -> Vec<char> {
-            let position = l.position;
-            while l.position < l.input.len() && !is_letter(l.ch) && !is_digit(l.ch) && l.ch != '#' && l.ch != ' ' {
+            while l.position < l.input.len() && !is_letter(l.ch) && !is_digit(l.ch) && !is_whitespace(l.ch) {
                 l.read_char();
             }
             l.input[position..l.position].to_vec()
@@ -163,27 +157,27 @@ impl Lexer {
             ';' => token = TokType::SEMICOLON(self.ch),
             ',' => token = TokType::COMMA(self.ch),
             _ => {
-                if !is_letter(self.ch) && !is_digit(self.ch) && self.ch != '#' && self.ch != ' '{
+                if !is_letter(self.ch) && !is_digit(self.ch) && !is_whitespace(self.ch){
                     let operator: Vec<char> = read_operator(self);
                     match get_operator_token(&operator) {
                         Ok(operator_token) => {
                             return operator_token;
                         }
-                        Err(_err) => {}
-                    }
-                }
-
-                if self.ch == '#' {
-                    let ident: Vec<char> = read_preprocessor_dir(self);
-                    match get_preprocessor_dir(&ident) {
-                        Ok(preprocessor_token) => {
-                            return preprocessor_token;
+                        Err(_err) => {
+                            let op_string: String = operator.iter().collect();
+                            if op_string == "//" || op_string == "/*" {
+                                match self.handle_comments(op_string.as_str()) {
+                                    Ok(comment_token) => {
+                                        return comment_token;
+                                    }
+                                    Err(_err) => { }
+                                }
+                            }
                         }
-                        Err(_err) => {},
                     }
                 }
 
-                if is_letter(self.ch) {
+               if is_letter(self.ch) {
                     let ident: Vec<char> = read_identifier(self);
                     match get_keyword_token(&ident) {
                         Ok(keyword_token) => {
@@ -197,7 +191,6 @@ impl Lexer {
                     let ident: String = read_number(self).into_iter().collect();
                     return TokType::NUMBER(ident);
                 }
-
                 return TokType::ILLEGAL
             }
         }

@@ -2,7 +2,7 @@ use std::fs::File;
 mod lexer;
 mod preprocessor;
 fn main() {
-    let mut preprocessor = preprocessor::Preprocessor::new("src/main.c");
-    preprocessor.process_file("src/main.c");
-    //lexer::parse_file("src/main.c".to_string());
+    //let mut preprocessor = preprocessor::Preprocessor::new("src/main.c");
+    //preprocessor.process_file("src/main.c");
+    lexer::parse_file("src/main.c".to_string());
 }
