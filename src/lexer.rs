@@ -1,4 +1,4 @@
-use std::fs::{self, File};
+use std::fs::{self};
 
 static KEYWORDS: [&str; 34] = [
    "auto", "break", "case", "char", "const", "continue",
@@ -35,7 +35,7 @@ pub enum TokType {
     SEMICOLON(char),
     COMMA(char),
     KEYWORD(String),
-    COMMENT(String),
+    STRING(String),
 }
 
 fn get_keyword_token(ident: &Vec<char>) -> Result<TokType, String> {
@@ -73,9 +73,10 @@ fn is_whitespace(ch: char) -> bool {
 
 struct Lexer {
     input: Vec<char>,
-    pub position: usize,
-    pub read_position: usize,
-    pub ch: char
+    position: usize,
+    read_position: usize,
+    ch: char,
+    comment: bool,
 }
 
 impl Lexer {
@@ -84,7 +85,8 @@ impl Lexer {
             input,
             position: 0,
             read_position: 0,
-            ch: '0'
+            ch: '0',
+            comment: false,
         }
     }
 
@@ -112,7 +114,8 @@ impl Lexer {
                 return Ok(TokType::EOF);
             },
             "/*" => {
-                todo!("Handle multiline comments");
+                self.comment = true;
+                return Ok(TokType::EOF);
             },
             _ => {},
         }
@@ -145,7 +148,13 @@ impl Lexer {
         };
 
         let token: TokType;
-        self.skip_whitespace();
+        while is_whitespace(self.ch) {
+            self.skip_whitespace();
+        }
+
+        if self.comment == true {
+            return TokType::EOF;
+        }
         match self.ch {
             '0' => token = TokType::EOF,
             '(' => token = TokType::LPAREN(self.ch),
@@ -172,6 +181,9 @@ impl Lexer {
                                     }
                                     Err(_err) => { }
                                 }
+                            }
+                            if op_string == "*/" {
+                                self.comment = false;
                             }
                         }
                     }

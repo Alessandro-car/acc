@@ -1,8 +1,11 @@
 int porcodio() {
-	printf("Ciao a tutti");
+	(Ciao)
 }
 #include <main.rs>
 int main() {
 	return 3&&4;
-	//Ciao
+	int ciao;
+	/* Ciao
+	 * Come s
+	 * Io bene */
 }
