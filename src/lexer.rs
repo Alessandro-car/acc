@@ -141,7 +141,25 @@ impl Lexer {
 
        let read_operator = |l: &mut Lexer| -> Vec<char> {
             let position = l.position;
-            while l.position < l.input.len() && !is_letter(l.ch) && !is_digit(l.ch) && !is_whitespace(l.ch) {
+            while l.position < l.input.len() && !is_letter(l.ch) && !is_digit(l.ch) && !is_whitespace(l.ch) && l.ch != '"' {
+                l.read_char();
+            }
+            l.input[position..l.position].to_vec()
+        };
+
+        let read_string = |l: &mut Lexer| -> Vec<char> {
+            let position = l.position;
+            let mut count = 0;
+            let mut escape: bool = false;
+            while l.position < l.input.len() && count < 2 {
+                if l.ch == '"' && !escape{
+                    count = count + 1;
+                }
+                if l.ch == '\\' {
+                    escape = true;
+                } else {
+                    escape = false;
+                }
                 l.read_char();
             }
             l.input[position..l.position].to_vec()
@@ -166,7 +184,7 @@ impl Lexer {
             ';' => token = TokType::SEMICOLON(self.ch),
             ',' => token = TokType::COMMA(self.ch),
             _ => {
-                if !is_letter(self.ch) && !is_digit(self.ch) && !is_whitespace(self.ch){
+                if !is_letter(self.ch) && !is_digit(self.ch) && !is_whitespace(self.ch) && self.ch != '"'{
                     let operator: Vec<char> = read_operator(self);
                     match get_operator_token(&operator) {
                         Ok(operator_token) => {
@@ -187,6 +205,11 @@ impl Lexer {
                             }
                         }
                     }
+                }
+
+                if self.ch == '"' {
+                    let string: Vec<char> = read_string(self);
+                    return TokType::STRING(string.into_iter().collect());
                 }
 
                if is_letter(self.ch) {

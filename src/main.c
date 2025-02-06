@@ -1,11 +1,7 @@
-int porcodio() {
-	(Ciao)
-}
 #include <main.rs>
 int main() {
-	return 3&&4;
-	int ciao;
-	/* Ciao
+	int b= "ciao \ \" come \" stai";
+		/* Ciao
 	 * Come s
 	 * Io bene */
 }
