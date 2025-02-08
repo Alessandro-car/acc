@@ -20,6 +20,7 @@ static OPERATORS: [&str; 37] = [
 
 #[derive(PartialEq)]
 #[derive(Debug)]
+#[derive(Clone)]
 pub enum TokType {
     EOF,
     ILLEGAL,
@@ -71,7 +72,7 @@ fn is_whitespace(ch: char) -> bool {
     ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
 }
 
-struct Lexer {
+pub struct Lexer {
     input: Vec<char>,
     position: usize,
     read_position: usize,
@@ -80,7 +81,7 @@ struct Lexer {
 }
 
 impl Lexer {
-    fn new(input: Vec<char>) -> Self {
+    pub fn new(input: Vec<char>) -> Self {
         Self {
             input,
             position: 0,
@@ -122,7 +123,7 @@ impl Lexer {
         return Ok(TokType::EOF);
     }
 
-    fn next_token(&mut self) -> TokType {
+    pub fn next_token(&mut self) -> TokType {
         let read_identifier = |l: &mut Lexer| -> Vec<char> {
             let position = l.position;
             while l.position < l.input.len() && is_letter(l.ch) {
@@ -234,7 +235,7 @@ impl Lexer {
     }
 }
 
-pub fn parse_file(file_path: String) {
+fn parse_file(file_path: String) {
     let contents = fs::read_to_string(file_path).expect("Should have been able to open the file");
     let mut lexer = Lexer::new(contents.chars().collect());
     lexer.read_char();
