@@ -37,55 +37,46 @@ enum ASTNode {
 }
 
 struct Parser {
-    lex: Lexer,
-    current_token: lexer::TokType,
+    tokens: Vec<lexer::TokType>,
+    pos: usize,
 }
 
 impl Parser {
-    fn new(input: Vec<char>) -> Self {
-        let mut lexer = lexer::Lexer::new(input);
-        let current_token = lexer.next_token();
+    fn new(tokens: Vec<lexer::TokType>) -> Self {
         Parser {
-            lex: lexer,
-            current_token,
+            tokens,
+            pos: 0,
         }
     }
 
-    fn next_token(&mut self) {
-        self.current_token = self.lex.next_token();
+   fn cur_token(&mut self) -> lexer::TokType {
+        return tokens[index];
     }
 
-    fn expect_token(&mut self, expected: lexer::TokType) {
-        if self.current_token == expected {
-            self.next_token();
-        } else {
-            panic!("Expected {:?}, got {:?}", expected, self.current_token);
+    fn parser_advance(&mut self) {
+        pos = pos + 1;
+    }
+
+    fn expected_token(&mut self, expected: lexer::TokType) {
+        if self.cur_token() != expected {
+            panic!("Expected {:?} but got {:?}", expected, self.cur_token());
         }
     }
 
-    fn parse_primary_expression(&mut self) -> ASTNode {
-        match self.current_token.clone() {
-            lexer::TokType::NUMBER(value) => {
-                self.next_token();
-                ASTNode::IntLiteral(value.parse::<i64>().unwrap())
-            }
-            lexer::TokType::STRING(value) => {
-                self.next_token();
-                ASTNode::StringLiteral(value)
-            }
-            lexer::TokType::IDENTIFIER(name) => {
-                self.next_token();
-                ASTNode::Identifier(name)
-            }
-            /*TokType::LPAREN => {
-                self.next_token();
-                let expr = self.parse_expression();
-                self.expect_token(TokType::RPAREN);
-                expr
-            }*/
-            _ => panic!("Unxpected token in primary expression"),
-        }
+    //TODO parse statement
+    fn parse_if(&mut self) -> ASTNode {
+        /*let condition = parse_rel_operation();
+        let if_branch;
+        let else_branch;
+        ASTNode::IfStmt { condition: (condition), if_branch: (if_branch), else_branch: (else_branch) }*/
     }
+
+    //TODO parse expression
+    //TODO parse literal
+    //TODO parse operations
+    //TODO parse variables
+    //TODO parse functions
+    //TODO parse blocks
+    //TODO parse program
 }
-
 
