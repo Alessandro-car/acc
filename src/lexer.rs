@@ -235,16 +235,18 @@ impl Lexer {
     }
 }
 
-fn parse_file(file_path: String) {
+pub fn tokenize_file(file_path: String) -> Vec<TokType> {
     let contents = fs::read_to_string(file_path).expect("Should have been able to open the file");
     let mut lexer = Lexer::new(contents.chars().collect());
+    let mut tokens = Vec::new();
     lexer.read_char();
     loop {
         let token = lexer.next_token();
         if token == TokType::EOF {
             break;
         } else {
-            println!("{:?}", token);
+            tokens.push(token);
         }
     }
+    tokens
 }

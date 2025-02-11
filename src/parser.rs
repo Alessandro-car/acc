@@ -50,11 +50,11 @@ impl Parser {
     }
 
    fn cur_token(&mut self) -> lexer::TokType {
-        return tokens[index];
+        return self.tokens.get(self.pos).unwrap().clone();
     }
 
     fn parser_advance(&mut self) {
-        pos = pos + 1;
+        self.pos = self.pos + 1;
     }
 
     fn expected_token(&mut self, expected: lexer::TokType) {
@@ -64,19 +64,56 @@ impl Parser {
     }
 
     //TODO parse statement
-    fn parse_if(&mut self) -> ASTNode {
-        /*let condition = parse_rel_operation();
-        let if_branch;
-        let else_branch;
-        ASTNode::IfStmt { condition: (condition), if_branch: (if_branch), else_branch: (else_branch) }*/
+    fn parse_if(&mut self) {
+        println!("{:?}", self.parse_rel_operation());
+        //ASTNode::IfStmt { condition: (condition), if_branch: (if_branch), else_branch: () }
+    }
+
+    fn parse_instruction(&mut self) {
+        let cur_token: lexer::TokType = self.cur_token();
+        if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
+            self.parse_if();
+        } else {
+            self.expected_token(lexer::TokType::KEYWORD("if".to_string()));
+        }
+
     }
 
     //TODO parse expression
     //TODO parse literal
     //TODO parse operations
+    fn parse_rel_operation(&mut self) -> ASTNode {
+        while self.cur_token() != lexer::TokType::LPAREN('(') {
+            self.parser_advance();
+        }
+        self.parser_advance();
+        let left_op = match self.cur_token() {
+            lexer::TokType::IDENTIFIER(ident) => Box::new(ASTNode::Identifier(ident)),
+            _ => panic!("Not an identfier token")
+        };
+        self.parser_advance();
+        let op_token = self.cur_token();
+        let mut right_op: Box<ASTNode> = Box::new(ASTNode::Identifier("".to_string()));
+        if op_token == lexer::TokType::OPERATOR("<".to_string()) {
+            self.parser_advance();
+            right_op = match self.cur_token() {
+                lexer::TokType::IDENTIFIER(ident) => Box::new(ASTNode::Identifier(ident)),
+                _ => panic!("Not an identifier token")
+            };
+            self.parser_advance();
+        }
+        ASTNode::BinaryOP { operator: (op_token), left: (left_op), right: (right_op) }
+    }
     //TODO parse variables
     //TODO parse functions
     //TODO parse blocks
     //TODO parse program
+}
+
+pub fn parse_program(tokens_list: Vec<lexer::TokType>) {
+    let mut parser = Parser::new(tokens_list.clone());
+    for token in tokens_list {
+        parser.parse_instruction();
+    }
 }
 
