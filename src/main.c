@@ -1,2 +1,1 @@
-if (a < b)
-
+return 26
