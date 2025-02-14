@@ -1,1 +1,1 @@
-return 26
+int *
