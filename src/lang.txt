@@ -1,0 +1,39 @@
+SYNTAX:
+	- Semicolon after each instruction;
+	- Curly braces after a if, while, for and for functions
+
+VARIABLES:
+	char a = '(a-zA-Z)?'
+	string a = "(a-zA-Z)*"
+	int a = (0-9)+
+	float a = (0-9)+(.)?(0-9)+
+
+	Arrays and pointers:
+	int/float/string a[]
+	int/float/string a[][]
+	int/float/string a*
+	int/float/string a**
+
+	keyword "const" for constant variables;
+
+FUNCTIONS:
+	parameter_type = int/float/char/string || int/float/char/string[] or *, **
+	return_type = void/int/float/char/string || int/float/char/string* or **
+	fn name_function(parameter_type name_parameter, ...) -> return_type {
+
+	}
+
+STATEMENTS:
+	IF:
+		Like the C language
+	WHILE:
+		Like the C language
+	DO-WHILE:
+		Like the C language
+	FOR:
+		Like the C language
+	RETURN:
+		Like the C language
+
+OPERATIONS:
+	Like the C language

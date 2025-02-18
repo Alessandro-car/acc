@@ -1,12 +1,18 @@
 use std::fs::{self};
 
-static KEYWORDS: [&str; 34] = [
+/*static KEYWORDS: [&str; 34] = [
    "auto", "break", "case", "char", "const", "continue",
    "default", "do", "double",  "else", "enum", "extern",
    "float", "for", "goto", "if", "inline", "int",
    "long", "register", "restrict", "return", "short", "signed",
    "sizeof", "static", "struct", "switch", "typedef", "union",
    "unsigned", "void", "volatile", "while"
+];*/
+
+static KEYWORDS: [&str; 13] = [
+    "char", "string", "int", "float", "const",
+    "fn", "void", "if", "else", "while",
+    "for", "do", "return"
 ];
 
 static OPERATORS: [&str; 37] = [
