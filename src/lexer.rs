@@ -1,5 +1,5 @@
 use std::fs::{self};
-
+use unwrap_enum::{EnumAs, EnumIs};
 /*static KEYWORDS: [&str; 34] = [
    "auto", "break", "case", "char", "const", "continue",
    "default", "do", "double",  "else", "enum", "extern",
@@ -24,9 +24,7 @@ static OPERATORS: [&str; 37] = [
     "?:", ".", "->", "&"  //Other operators
 ];
 
-#[derive(PartialEq)]
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(PartialEq, Debug, Clone, EnumAs, EnumIs)]
 pub enum TokType {
     EOF,
     ILLEGAL,
@@ -145,7 +143,7 @@ impl Lexer {
             }
             l.input[position..l.position].to_vec()
         };
-
+       //TODO aggiustare questa funzione, se scrivo =; giustamente da errore
        let read_operator = |l: &mut Lexer| -> Vec<char> {
             let position = l.position;
             while l.position < l.input.len() && !is_letter(l.ch) && !is_digit(l.ch) && !is_whitespace(l.ch) && l.ch != '"' {

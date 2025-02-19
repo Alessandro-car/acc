@@ -1,3 +1,5 @@
+use regex::Replacer;
+use regex::Regex;
 use crate::lexer;
 #[derive(Debug)]
 enum ASTNode {
@@ -134,18 +136,46 @@ impl Parser {
     }
 
     fn parse_instruction(&mut self) {
+        let int_keyword   = lexer::TokType::KEYWORD("int".to_string());
+        let float_keyword = lexer::TokType::KEYWORD("float".to_string());
+        let char_keyword  = lexer::TokType::KEYWORD("char".to_string());
+        let str_keyword   = lexer::TokType::KEYWORD("string".to_string());
+        let data_keyword: Vec<lexer::TokType> = Vec::from([int_keyword, float_keyword, char_keyword, str_keyword]);
         let cur_token: lexer::TokType = self.cur_token();
-        if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
+
+        if data_keyword.contains(&cur_token) {
+            println!("{:?}", self.parse_var());
+        }
+        /*if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
+            self.parse_func();
+        }*/
+        /*if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
             self.parser_advance();
             self.parse_if();
         }
         if cur_token == lexer::TokType::KEYWORD("return".to_string()) {
             self.parser_advance();
             println!("{:?}", self.parse_return());
-        }
-        println!("{:?}", self.parse_func());
+        }*/
     }
-    //TODO parse variables
+
+    fn parse_var(&mut self) -> ASTNode {
+        let var_type: String = self.cur_token().as_keyword().unwrap().to_string();
+        self.parser_advance();
+        let mut name: String = String::new();
+        match self.cur_token() {
+            lexer::TokType::IDENTIFIER(str) => name.push_str(&str),
+            _ => panic!("Expected an identifier token but got {:?}", self.cur_token()),
+        };
+        self.parser_advance();
+        let initializer = Default::default();
+        /*if self.cur_token() == lexer::TokType::OPERATOR("=".to_string()) {
+            //TODO match identifier
+        }*/
+        //self.expected_token(lexer::TokType::SEMICOLON(';'));
+        ASTNode::VarDec { var_type, name, initializer }
+    }
+
     //TODO parse functions
     //TODO parse blocks
 }

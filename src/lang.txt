@@ -1,12 +1,12 @@
 SYNTAX:
-	- Semicolon after each instruction;
+	- Semicolon after each instruction
 	- Curly braces after a if, while, for and for functions
 
 VARIABLES:
-	char a = '(a-zA-Z)?'
-	string a = "(a-zA-Z)*"
+	char a = '(a-zA-Z)'
+	string a = "(everything)*"
 	int a = (0-9)+
-	float a = (0-9)+(.)?(0-9)+
+	float a = (0-9)+(.(0-9)+)?
 
 	Arrays and pointers:
 	int/float/string a[]
