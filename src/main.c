@@ -1,1 +1,1 @@
-int a = 10
+fn ciao(int a, int b) -> int

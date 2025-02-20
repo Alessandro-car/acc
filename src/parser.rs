@@ -164,36 +164,51 @@ impl Parser {
         self.parser_advance();
         self.expected_token(lexer::TokType::LPAREN('('));
         let mut params: Vec<(String, String)> = Vec::new();
-
-        //let ret_keyword: Vec<&str> = Vec::from(["char", "double", "float", "int", "long", "short", "void"]);
-        /*let func_type_tok = self.cur_token();
-        let mut equal: bool = false;
-        let mut type_func: String = String::new();
-        for keyword in func_keyword {
-            if func_type_tok == lexer::TokType::KEYWORD(keyword.to_string()) {
-                self.parser_advance();
-                type_func.push_str(keyword);
-                equal = true;
+        let valid_param_types: Vec<&str> = Vec::from(["int", "float", "char", "string"]);
+        while self.cur_token() != lexer::TokType::RPAREN(')') {
+            let mut param_type: String = String::new();
+            match self.cur_token() {
+                lexer::TokType::KEYWORD(data_type) => {
+                    if !valid_param_types.contains(&data_type.as_str()) {
+                        panic!("Not a valid data type, got {data_type}")
+                    }
+                    param_type.push_str(&data_type);
+                }
+                _ => panic!("Expected a keyword but got {:?}", self.cur_token()),
+            };
+            self.parser_advance();
+            let mut param_name: String = String::new();
+            match self.cur_token() {
+                lexer::TokType::IDENTIFIER(par_name) => param_name.push_str(&par_name),
+                _ => panic!{"Expected an identifier but got {:?}", self.cur_token()},
+            };
+            params.push(( param_type, param_name ));
+            self.parser_advance();
+            if self.cur_token() != lexer::TokType::RPAREN(')') {
+                self.expected_token(lexer::TokType::COMMA(','));
             }
         }
-        if !equal {
-            panic!("Not a valid function");
+        self.parser_advance();
+        self.expected_token(lexer::TokType::OPERATOR("->".to_string()));
+        let mut ret_type: String = String::new();
+        let valid_ret_types: Vec<&str> = Vec::from(["void", "int", "float", "char", "string"]);
+        match self.cur_token() {
+            lexer::TokType::KEYWORD(return_type) => {
+                if !valid_ret_types.contains(&return_type.as_str()) {
+                    panic!("Not a valid return type, got {return_type}");
+                }
+                ret_type.push_str(&return_type);
+            }
+            _ => panic!{"Expected a keyword but got {:?}", self.cur_token()}
         }
-        if self.cur_token() == lexer::TokType::OPERATOR("*".to_string()) {
-            type_func.push('*');
-            self.parser_advance();
-        }
-
-        let name_func: String = String::new();
-
-        let params: Vec<(String, String)> = Vec::new();*/
-        ASTNode::FuncDec { func_type: type_func, name: name_func, params, body: Box::new(ASTNode::StringLiteral("".to_string())) }
+        self.parser_advance();
+        let body = Box::new(ASTNode::Block(Vec::new()));
+        ASTNode::FuncDec { name, params, ret_type, body }
     }
 
     //TODO parse blocks
 }
 
-//TODO parse program
 pub fn parse_program(tokens_list: Vec<lexer::TokType>) {
     let mut parser = Parser::new(tokens_list.clone());
     while parser.pos < tokens_list.len() {
