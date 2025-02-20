@@ -5,9 +5,9 @@ use crate::lexer;
 enum ASTNode {
     Program(Vec<ASTNode>),
     FuncDec {
-        func_type: String,
         name: String,
         params: Vec<(String, String)>,
+        ret_type: String,
         body: Box<ASTNode>,
     },
     Block(Vec<ASTNode>),
@@ -87,7 +87,7 @@ impl Parser {
             lexer::TokType::IDENTIFIER(ident) => ASTNode::Identifier(ident),
             lexer::TokType::STRING(string) => ASTNode::StringLiteral(string),
             lexer::TokType::NUMBER(num) => ASTNode::IntLiteral(num.parse::<i64>().unwrap()),
-            _ => panic!("Not an identifier token")
+            _ => panic!("Expected a term or initializer but got {:?}", self.cur_token())
         };
         self.parser_advance();
         term
@@ -109,32 +109,6 @@ impl Parser {
         ASTNode::BinaryOP { operator: (op_token), left: Box::new(left_op), right: Box::new(right_op) }
     }
 
-    fn parse_func(&mut self) -> ASTNode {
-        let func_keyword: Vec<&str> = Vec::from(["char", "double", "float", "int", "long", "short", "void"]);
-        let func_type_tok = self.cur_token();
-        let mut equal: bool = false;
-        let mut type_func: String = String::new();
-        for keyword in func_keyword {
-            if func_type_tok == lexer::TokType::KEYWORD(keyword.to_string()) {
-                self.parser_advance();
-                type_func.push_str(keyword);
-                equal = true;
-            }
-        }
-        if !equal {
-            panic!("Not a valid function");
-        }
-        if self.cur_token() == lexer::TokType::OPERATOR("*".to_string()) {
-            type_func.push('*');
-            self.parser_advance();
-        }
-
-        let name_func: String = String::new();
-
-        let params: Vec<(String, String)> = Vec::new();
-        ASTNode::FuncDec { func_type: type_func, name: name_func, params: params, body: Box::new(ASTNode::StringLiteral("".to_string())) }
-    }
-
     fn parse_instruction(&mut self) {
         let int_keyword   = lexer::TokType::KEYWORD("int".to_string());
         let float_keyword = lexer::TokType::KEYWORD("float".to_string());
@@ -146,9 +120,9 @@ impl Parser {
         if data_keyword.contains(&cur_token) {
             println!("{:?}", self.parse_var());
         }
-        /*if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
-            self.parse_func();
-        }*/
+        if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
+            println!("{:?}", self.parse_func());
+        }
         /*if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
             self.parser_advance();
             self.parse_if();
@@ -168,15 +142,54 @@ impl Parser {
             _ => panic!("Expected an identifier token but got {:?}", self.cur_token()),
         };
         self.parser_advance();
-        let initializer = Default::default();
-        /*if self.cur_token() == lexer::TokType::OPERATOR("=".to_string()) {
-            //TODO match identifier
-        }*/
-        //self.expected_token(lexer::TokType::SEMICOLON(';'));
-        ASTNode::VarDec { var_type, name, initializer }
+        let initializer = if self.cur_token() == lexer::TokType::OPERATOR("=".to_string()) {
+            self.parser_advance();
+            self.parse_term()
+        } else {
+            panic!("Expected an initializer but found {:?}", self.cur_token());
+        };
+        if self.pos == self.tokens.len() {
+            panic!("Expected {:?}", lexer::TokType::SEMICOLON(';'));
+        }
+        self.expected_token(lexer::TokType::SEMICOLON(';'));
+        ASTNode::VarDec { var_type, name, initializer: Some(Box::new(initializer)) }
     }
 
-    //TODO parse functions
+    fn parse_func(&mut self) -> ASTNode {
+        self.parser_advance();
+        let name = match self.cur_token() {
+            lexer::TokType::IDENTIFIER(ident) => String::from(ident),
+            _ => panic!("Expected an identifier token but got {:?}", self.cur_token())
+        };
+        self.parser_advance();
+        self.expected_token(lexer::TokType::LPAREN('('));
+        let mut params: Vec<(String, String)> = Vec::new();
+
+        //let ret_keyword: Vec<&str> = Vec::from(["char", "double", "float", "int", "long", "short", "void"]);
+        /*let func_type_tok = self.cur_token();
+        let mut equal: bool = false;
+        let mut type_func: String = String::new();
+        for keyword in func_keyword {
+            if func_type_tok == lexer::TokType::KEYWORD(keyword.to_string()) {
+                self.parser_advance();
+                type_func.push_str(keyword);
+                equal = true;
+            }
+        }
+        if !equal {
+            panic!("Not a valid function");
+        }
+        if self.cur_token() == lexer::TokType::OPERATOR("*".to_string()) {
+            type_func.push('*');
+            self.parser_advance();
+        }
+
+        let name_func: String = String::new();
+
+        let params: Vec<(String, String)> = Vec::new();*/
+        ASTNode::FuncDec { func_type: type_func, name: name_func, params, body: Box::new(ASTNode::StringLiteral("".to_string())) }
+    }
+
     //TODO parse blocks
 }
 
