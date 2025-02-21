@@ -69,7 +69,7 @@ fn is_letter(ch: char) -> bool {
 }
 
 fn is_digit(ch: char) -> bool {
-    '0' <= ch && ch <= '9'
+    ch.is_ascii_digit()
 }
 
 fn is_whitespace(ch: char) -> bool {
@@ -90,14 +90,14 @@ impl Lexer {
             input,
             position: 0,
             read_position: 0,
-            ch: '0',
+            ch: '\0',
             comment: false,
         }
     }
 
     fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
-            self.ch = '0';
+            self.ch = '\0';
         } else {
             self.ch = self.input[self.read_position];
         }
@@ -115,7 +115,7 @@ impl Lexer {
     fn handle_comments(&mut self, type_comment: &str) -> Result<TokType, String>{
         match type_comment {
             "//" => {
-                self.ch = '0';
+                self.ch = '\0';
                 return Ok(TokType::EOF);
             },
             "/*" => {
@@ -179,7 +179,7 @@ impl Lexer {
             return TokType::EOF;
         }
         match self.ch {
-            '0' => token = TokType::EOF,
+            '\0' => token = TokType::EOF,
             '(' => token = TokType::LPAREN(self.ch),
             ')' => token = TokType::RPAREN(self.ch),
             '{' => token = TokType::LBRACE(self.ch),

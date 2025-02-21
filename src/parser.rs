@@ -109,7 +109,7 @@ impl Parser {
         ASTNode::BinaryOP { operator: (op_token), left: Box::new(left_op), right: Box::new(right_op) }
     }
 
-    fn parse_instruction(&mut self) {
+    fn parse_instruction(&mut self) -> ASTNode {
         let int_keyword   = lexer::TokType::KEYWORD("int".to_string());
         let float_keyword = lexer::TokType::KEYWORD("float".to_string());
         let char_keyword  = lexer::TokType::KEYWORD("char".to_string());
@@ -118,11 +118,12 @@ impl Parser {
         let cur_token: lexer::TokType = self.cur_token();
 
         if data_keyword.contains(&cur_token) {
-            println!("{:?}", self.parse_var());
+            return self.parse_var();
         }
         if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
-            println!("{:?}", self.parse_func());
+            return self.parse_func();
         }
+        return ASTNode::Block(Vec::new());
         /*if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
             self.parser_advance();
             self.parse_if();
@@ -148,9 +149,6 @@ impl Parser {
         } else {
             panic!("Expected an initializer but found {:?}", self.cur_token());
         };
-        if self.pos == self.tokens.len() {
-            panic!("Expected {:?}", lexer::TokType::SEMICOLON(';'));
-        }
         self.expected_token(lexer::TokType::SEMICOLON(';'));
         ASTNode::VarDec { var_type, name, initializer: Some(Box::new(initializer)) }
     }
@@ -202,17 +200,26 @@ impl Parser {
             _ => panic!{"Expected a keyword but got {:?}", self.cur_token()}
         }
         self.parser_advance();
-        let body = Box::new(ASTNode::Block(Vec::new()));
+        let body = Box::new(ASTNode::Block(self.parse_block()));
         ASTNode::FuncDec { name, params, ret_type, body }
     }
 
-    //TODO parse blocks
+    fn parse_block(&mut self) -> Vec<ASTNode> {
+        self.expected_token(lexer::TokType::LBRACE('{'));
+        let mut block: Vec<ASTNode> = Vec::new();
+        while self.cur_token() != lexer::TokType::RBRACE('}') {
+            block.push(self.parse_instruction());
+        }
+        self.parser_advance();
+        block
+    }
 }
 
 pub fn parse_program(tokens_list: Vec<lexer::TokType>) {
     let mut parser = Parser::new(tokens_list.clone());
-    while parser.pos < tokens_list.len() {
-        parser.parse_instruction();
+    while parser.pos < tokens_list.len(){
+        //println!("{:?}", tokens_list);
+        println!("{:?}", parser.parse_instruction());
     }
 }
 
