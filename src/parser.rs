@@ -67,32 +67,29 @@ impl Parser {
         }
     }
 
-    //TODO parse statement
-    fn parse_if(&mut self) {
-        //let _condition: Box<ASTNode> = Box::new(self.parse_rel_operation());
-        println!("{:?}", self.parse_operation());
-        //ASTNode::IfStmt { condition: (condition), if_branch: (if_branch), else_branch: () }
+   //TODO parse all operations
+
+    fn parse_instruction(&mut self) -> ASTNode {
+        let int_keyword   = lexer::TokType::KEYWORD("int".to_string());
+        let float_keyword = lexer::TokType::KEYWORD("float".to_string());
+        let char_keyword  = lexer::TokType::KEYWORD("char".to_string());
+        let str_keyword   = lexer::TokType::KEYWORD("string".to_string());
+        let data_keyword: Vec<lexer::TokType> = Vec::from([int_keyword, float_keyword, char_keyword, str_keyword]);
+        let cur_token: lexer::TokType = self.cur_token();
+
+        if data_keyword.contains(&cur_token) {
+            return self.parse_var();
+        }
+        if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
+            return self.parse_func();
+        }
+
+        if cur_token == lexer::TokType::KEYWORD("return".to_string()) {
+            return self.parse_return_stmt();
+        }
+        panic!("Not a valid keyword");
     }
 
-    fn parse_return(&mut self) -> ASTNode {
-        //TODO check for unexpected tokens and check if it is an identifier or a condtion or other
-        let term = Box::new(self.parse_term());
-        ASTNode::ReturnStmt(term)
-    }
-
-    //TODO parse expression
-
-    fn parse_term(&mut self) -> ASTNode {
-        let term = match self.cur_token() {
-            lexer::TokType::IDENTIFIER(ident) => ASTNode::Identifier(ident),
-            lexer::TokType::STRING(string) => ASTNode::StringLiteral(string),
-            lexer::TokType::NUMBER(num) => ASTNode::IntLiteral(num.parse::<i64>().unwrap()),
-            _ => panic!("Expected a term or initializer but got {:?}", self.cur_token())
-        };
-        self.parser_advance();
-        term
-    }
-    //TODO parse all operations
     fn parse_operation(&mut self) -> ASTNode {
         let rel_operators: Vec<&str> = Vec::from(["==", "!=", ">", "<", ">=", "<=", "&&", "||"]);
         self.expected_token(lexer::TokType::LPAREN('('));
@@ -109,31 +106,26 @@ impl Parser {
         ASTNode::BinaryOP { operator: (op_token), left: Box::new(left_op), right: Box::new(right_op) }
     }
 
-    fn parse_instruction(&mut self) -> ASTNode {
-        let int_keyword   = lexer::TokType::KEYWORD("int".to_string());
-        let float_keyword = lexer::TokType::KEYWORD("float".to_string());
-        let char_keyword  = lexer::TokType::KEYWORD("char".to_string());
-        let str_keyword   = lexer::TokType::KEYWORD("string".to_string());
-        let data_keyword: Vec<lexer::TokType> = Vec::from([int_keyword, float_keyword, char_keyword, str_keyword]);
-        let cur_token: lexer::TokType = self.cur_token();
-
-        if data_keyword.contains(&cur_token) {
-            return self.parse_var();
-        }
-        if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
-            return self.parse_func();
-        }
-        return ASTNode::Block(Vec::new());
-        /*if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
-            self.parser_advance();
-            self.parse_if();
-        }
-        if cur_token == lexer::TokType::KEYWORD("return".to_string()) {
-            self.parser_advance();
-            println!("{:?}", self.parse_return());
-        }*/
+    fn parse_term(&mut self) -> ASTNode {
+        let term = match self.cur_token() {
+            lexer::TokType::IDENTIFIER(ident) => ASTNode::Identifier(ident),
+            lexer::TokType::STRING(string) => ASTNode::StringLiteral(string),
+            lexer::TokType::NUMBER(num) => ASTNode::IntLiteral(num.parse::<i64>().unwrap()),
+            _ => panic!("Expected a term or initializer but got {:?}", self.cur_token())
+        };
+        self.parser_advance();
+        term
     }
 
+    //TODO parse statements
+    fn parse_return_stmt(&mut self) -> ASTNode {
+        self.parser_advance();
+        let term = Box::new(self.parse_term());
+        self.expected_token(lexer::TokType::SEMICOLON(';'));
+        ASTNode::ReturnStmt(term)
+    }
+
+    //TODO function to control the variable declaration
     fn parse_var(&mut self) -> ASTNode {
         let var_type: String = self.cur_token().as_keyword().unwrap().to_string();
         self.parser_advance();
@@ -200,19 +192,41 @@ impl Parser {
             _ => panic!{"Expected a keyword but got {:?}", self.cur_token()}
         }
         self.parser_advance();
-        let body = Box::new(ASTNode::Block(self.parse_block()));
+        let mut need_return: bool = false;
+        if !ret_type.contains("void") {
+            need_return = true;
+        }
+        let body = Box::new(ASTNode::Block(self.parse_block(need_return)));
         ASTNode::FuncDec { name, params, ret_type, body }
     }
 
-    fn parse_block(&mut self) -> Vec<ASTNode> {
+    fn parse_block(&mut self, need_return: bool ) -> Vec<ASTNode> {
         self.expected_token(lexer::TokType::LBRACE('{'));
         let mut block: Vec<ASTNode> = Vec::new();
-        while self.cur_token() != lexer::TokType::RBRACE('}') {
-            block.push(self.parse_instruction());
+        let mut return_keyword: bool = false;
+        while self.cur_token() != lexer::TokType::RBRACE('}') && !return_keyword {
+            if self.cur_token() == lexer::TokType::KEYWORD("return".to_string()) {
+                return_keyword = true;
+            }
+            let instr = self.parse_instruction();
+            block.push(instr);
         }
+
+        if return_keyword {
+            while self.cur_token() != lexer::TokType::RBRACE('}') {
+                self.parser_advance();
+            }
+        }
+
+        if need_return && !return_keyword {
+            panic!("Expected a return statement");
+        }
+
         self.parser_advance();
         block
     }
+
+    //TODO function to control the block
 }
 
 pub fn parse_program(tokens_list: Vec<lexer::TokType>) {
