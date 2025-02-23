@@ -125,6 +125,16 @@ impl Parser {
         ASTNode::ReturnStmt(term)
     }
 
+    fn parse_if_stmt(&mut self) -> ASTNode {
+        self.parser_advance();
+        self.expected_token(lexer::TokType::LPAREN('('));
+        //TODO loop to parse the condition or multiple conditions
+        self.expected_token(lexer::TokType::RPAREN(')'));
+        self.parse_block(false);
+        //TODO check if there is an else statement
+        ASTNode::IfStmt { condition: (), if_branch: (), else_branch: () }
+    }
+
     //TODO function to control the variable declaration
     fn parse_var(&mut self) -> ASTNode {
         let var_type: String = self.cur_token().as_keyword().unwrap().to_string();

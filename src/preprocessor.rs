@@ -71,7 +71,3 @@ impl Preprocessor {
         self.new_file.write(self.contents_to_write.as_bytes());
     }
 }
-
-
-
-
