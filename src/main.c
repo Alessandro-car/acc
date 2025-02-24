@@ -1,9 +1,13 @@
 fn ciao(int a, int b) -> int {
 	int a = 5;
 	int b = 0;
+	if (a > b) {
+		int c = 0;
+		int b = 2;
+	} else {
+		int e = 2;
+	}
 	return 4;
-	int a = 2;
-	int b = 5;
 }
 
 /*fn ciao(int a, int b) -> int {

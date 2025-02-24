@@ -27,8 +27,8 @@ enum ASTNode {
     ReturnStmt(Box<ASTNode>),
     IfStmt {
         condition: Box<ASTNode>,
-        if_branch: Box<ASTNode>,
-        else_branch: Option<Box<ASTNode>>,
+        if_branch: Box<Vec<ASTNode>>,
+        else_branch: Option<Box<Vec<ASTNode>>>,
     },
     WhileStmt {
         condition: Box<ASTNode>,
@@ -83,10 +83,13 @@ impl Parser {
         if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
             return self.parse_func();
         }
-
         if cur_token == lexer::TokType::KEYWORD("return".to_string()) {
             return self.parse_return_stmt();
         }
+        if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
+            return self.parse_if_stmt();
+        }
+
         panic!("Not a valid keyword");
     }
 
@@ -127,12 +130,16 @@ impl Parser {
 
     fn parse_if_stmt(&mut self) -> ASTNode {
         self.parser_advance();
-        self.expected_token(lexer::TokType::LPAREN('('));
-        //TODO loop to parse the condition or multiple conditions
-        self.expected_token(lexer::TokType::RPAREN(')'));
-        self.parse_block(false);
+        let condition = Box::new(self.parse_operation());
+        let if_branch = Box::new(self.parse_block(false));
         //TODO check if there is an else statement
-        ASTNode::IfStmt { condition: (), if_branch: (), else_branch: () }
+        let else_branch = if self.cur_token() == lexer::TokType::KEYWORD("else".to_string()) {
+            self.parser_advance();
+            Some(Box::new(self.parse_block(false)))
+        } else {
+            None
+        };
+        ASTNode::IfStmt { condition, if_branch , else_branch }
     }
 
     //TODO function to control the variable declaration
