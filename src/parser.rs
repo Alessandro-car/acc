@@ -16,6 +16,10 @@ enum ASTNode {
         name: String,
         initializer: Option<Box<ASTNode>>,
     },
+    UnaryOP {
+        operator: lexer::TokType,
+        operand: Box<ASTNode>,
+    },
     BinaryOP {
         operator: lexer::TokType,
         left: Box<ASTNode>,
@@ -67,8 +71,6 @@ impl Parser {
         }
     }
 
-   //TODO parse all operations
-
     fn parse_instruction(&mut self) -> ASTNode {
         let int_keyword   = lexer::TokType::KEYWORD("int".to_string());
         let float_keyword = lexer::TokType::KEYWORD("float".to_string());
@@ -89,23 +91,62 @@ impl Parser {
         if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
             return self.parse_if_stmt();
         }
+        if cur_token == lexer::TokType::KEYWORD("while".to_string()) {
+            return self.parse_while_stmt();
+        }
+        if cur_token == lexer::TokType::KEYWORD("do".to_string()) {
+            return self.parse_do_while_stmt();
+        }
+        if cur_token == lexer::TokType::KEYWORD("for".to_string()) {
+            return self.parse_for_statement()
+        }
 
         panic!("Not a valid keyword");
     }
 
-    fn parse_operation(&mut self) -> ASTNode {
-        let rel_operators: Vec<&str> = Vec::from(["==", "!=", ">", "<", ">=", "<=", "&&", "||"]);
-        self.expected_token(lexer::TokType::LPAREN('('));
+    fn parse_unary_operation(&mut self) -> ASTNode {
+        let prefix_unary_operator: Vec<&str> = Vec::from(["-", "!", "~", "++", "--"]);
+        let mut operator: lexer::TokType = lexer::TokType::OPERATOR("".to_string());
+        let mut operand: ASTNode = ASTNode::Identifier("".to_string());
+        let mut found: bool = false;
+        for prefix_operator in prefix_unary_operator {
+            if self.cur_token() == lexer::TokType::OPERATOR(prefix_operator.to_string()) {
+                operator = self.cur_token();
+                self.parser_advance();
+                operand = self.parse_term();
+                found = true;
+            }
+        }
+
+        if !found {
+            panic!("Expected a unary operator but got {:?}", self.cur_token());
+        }
+
+        ASTNode::UnaryOP { operator, operand: Box::new(operand) }
+    }
+
+    fn parse_binary_operation(&mut self) -> ASTNode {
+        let binary_operators: Vec<&str> = Vec::from(["==", "!=", ">", "<", ">=", "<=",
+                                                 "&&", "||", "*", "/", "%", "+",
+                                                 "-", "&", "|", ">>", "<<", "=",
+                                                 "+=", "-=", "*=", "/=", "%=", "&=",
+                                                 "|=", "<<=", ">>="
+                                        ]);
         let left_op = self.parse_term();
         let op_token = self.cur_token();
         let mut right_op: ASTNode = ASTNode::Identifier("".to_string());
-        for operator in rel_operators {
+        let mut found: bool = false;
+        for operator in binary_operators {
             if op_token == lexer::TokType::OPERATOR(operator.to_string()) {
                 self.parser_advance();
                 right_op = self.parse_term();
+                found = true;
             }
         }
-        self.expected_token(lexer::TokType::RPAREN(')'));
+        if !found {
+            panic!("Expected a binary operator but got {:?}", self.cur_token());
+        }
+
         ASTNode::BinaryOP { operator: (op_token), left: Box::new(left_op), right: Box::new(right_op) }
     }
 
@@ -130,9 +171,14 @@ impl Parser {
 
     fn parse_if_stmt(&mut self) -> ASTNode {
         self.parser_advance();
-        let condition = Box::new(self.parse_operation());
+        self.expected_token(lexer::TokType::LPAREN('('));
+        let condition = match self.cur_token() {
+            lexer::TokType::IDENTIFIER(_ident) => Box::new(self.parse_binary_operation()),
+            lexer::TokType::OPERATOR(_op) => Box::new(self.parse_unary_operation()),
+            _ => panic!("Illegal start of a condition.\nExpected a term or a unary operator but got {:?}", self.cur_token()),
+        };
+        self.expected_token(lexer::TokType::RPAREN(')'));
         let if_branch = Box::new(self.parse_block(false));
-        //TODO check if there is an else statement
         let else_branch = if self.cur_token() == lexer::TokType::KEYWORD("else".to_string()) {
             self.parser_advance();
             Some(Box::new(self.parse_block(false)))
@@ -141,6 +187,19 @@ impl Parser {
         };
         ASTNode::IfStmt { condition, if_branch , else_branch }
     }
+
+    fn parse_while_stmt(&mut self) -> ASTNode {
+        todo!("Parse while statement");
+    }
+
+    fn parse_do_while_stmt(&mut self) -> ASTNode {
+        todo!("Parse do-while statement");
+    }
+
+    fn parse_for_statement(&mut self) -> ASTNode {
+        todo!("Parse for statement");
+    }
+
 
     //TODO function to control the variable declaration
     fn parse_var(&mut self) -> ASTNode {
@@ -250,7 +309,7 @@ pub fn parse_program(tokens_list: Vec<lexer::TokType>) {
     let mut parser = Parser::new(tokens_list.clone());
     while parser.pos < tokens_list.len(){
         //println!("{:?}", tokens_list);
-        println!("{:?}", parser.parse_instruction());
+        println!("{:#?}", parser.parse_instruction());
     }
 }
 
