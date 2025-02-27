@@ -37,6 +37,10 @@ enum ASTNode {
     WhileStmt {
         condition: Box<ASTNode>,
         body: Box<ASTNode>,
+    },
+    DoWhileStmt {
+        body: Box<ASTNode>,
+        condition: Box<ASTNode>,
     }
 }
 
@@ -189,11 +193,31 @@ impl Parser {
     }
 
     fn parse_while_stmt(&mut self) -> ASTNode {
-        todo!("Parse while statement");
+        self.parser_advance();
+        self.expected_token(lexer::TokType::LPAREN('('));
+        let condition = match self.cur_token() {
+            lexer::TokType::IDENTIFIER(_ident) => Box::new(self.parse_binary_operation()),
+            lexer::TokType::OPERATOR(_op) => Box::new(self.parse_unary_operation()),
+            _ => panic!("Illegal start of a condtion.\nExpected a term or an operator but got {:?}", self.cur_token()),
+        };
+        self.expected_token(lexer::TokType::RPAREN(')'));
+        let body = Box::new(ASTNode::Block(self.parse_block(false)));
+        ASTNode::WhileStmt { condition, body }
     }
 
     fn parse_do_while_stmt(&mut self) -> ASTNode {
-        todo!("Parse do-while statement");
+        self.parser_advance();
+        let body = Box::new(ASTNode::Block(self.parse_block(false)));
+        self.expected_token(lexer::TokType::KEYWORD("while".to_string()));
+        self.expected_token(lexer::TokType::LPAREN('('));
+        let condition = match self.cur_token() {
+            lexer::TokType::IDENTIFIER(_ident) => Box::new(self.parse_binary_operation()),
+            lexer::TokType::OPERATOR(_op) => Box::new(self.parse_unary_operation()),
+            _ => panic!("Illegal start of a condition.\nExpected a term or a unary operator but got {:?}", self.cur_token()),
+        };
+        self.expected_token(lexer::TokType::RPAREN(')'));
+        self.expected_token(lexer::TokType::SEMICOLON(';'));
+        ASTNode::DoWhileStmt { body, condition }
     }
 
     fn parse_for_statement(&mut self) -> ASTNode {
