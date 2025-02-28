@@ -28,6 +28,10 @@ enum ASTNode {
     Identifier(String),
     IntLiteral(i64),
     StringLiteral(String),
+    Assignment {
+        left_term: Box<ASTNode>,
+        right_term: Box<ASTNode>,
+    },
     ReturnStmt(Box<ASTNode>),
     IfStmt {
         condition: Box<ASTNode>,
@@ -86,26 +90,39 @@ impl Parser {
         if data_keyword.contains(&cur_token) {
             return self.parse_var();
         }
-        if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
+        else if cur_token == lexer::TokType::KEYWORD("fn".to_string()) {
             return self.parse_func();
         }
-        if cur_token == lexer::TokType::KEYWORD("return".to_string()) {
+        else if cur_token == lexer::TokType::KEYWORD("return".to_string()) {
             return self.parse_return_stmt();
         }
-        if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
+        else if cur_token == lexer::TokType::KEYWORD("if".to_string()) {
             return self.parse_if_stmt();
         }
-        if cur_token == lexer::TokType::KEYWORD("while".to_string()) {
+        else if cur_token == lexer::TokType::KEYWORD("while".to_string()) {
             return self.parse_while_stmt();
         }
-        if cur_token == lexer::TokType::KEYWORD("do".to_string()) {
+        else if cur_token == lexer::TokType::KEYWORD("do".to_string()) {
             return self.parse_do_while_stmt();
         }
-        if cur_token == lexer::TokType::KEYWORD("for".to_string()) {
-            return self.parse_for_statement()
+        else if cur_token == lexer::TokType::KEYWORD("for".to_string()) {
+            return self.parse_for_statement();
+        } else {
+            return self.parse_assignment();
         }
+    }
 
-        panic!("Not a valid keyword");
+    //TODO the right term of an assignment could be an operation, so I need to check it
+    fn parse_assignment(&mut self) -> ASTNode {
+        let left_term = match self.cur_token() {
+            lexer::TokType::IDENTIFIER(ident) => Box::new(ASTNode::Identifier(ident)),
+            _ => panic!("Not a valid left term for the assignment, got {:?}", self.cur_token()),
+        };
+        self.parser_advance();
+        self.expected_token(lexer::TokType::OPERATOR("=".to_string()));
+        let right_term = Box::new(self.parse_term());
+        self.expected_token(lexer::TokType::SEMICOLON(';'));
+        ASTNode::Assignment { left_term, right_term }
     }
 
     fn parse_unary_operation(&mut self) -> ASTNode {
@@ -128,7 +145,7 @@ impl Parser {
 
         ASTNode::UnaryOP { operator, operand: Box::new(operand) }
     }
-
+    //TODO check for multiple operations and for precedence
     fn parse_binary_operation(&mut self) -> ASTNode {
         let binary_operators: Vec<&str> = Vec::from(["==", "!=", ">", "<", ">=", "<=",
                                                  "&&", "||", "*", "/", "%", "+",

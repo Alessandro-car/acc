@@ -17,7 +17,7 @@ fn ciao(int a, int b) -> int {
 		int a = 2;
 		int b = 2;
 	} while (a < b);
-
+	a = 4;
 	return 4;
 }
 
